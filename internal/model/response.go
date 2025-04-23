@@ -45,6 +45,7 @@ func NewCreatedResponse(data any, args ...any) *Response {
 	response := &Response{
 		Status: 201,
 		Data:   data,
+		Message: "Success in creating object.",
 	}
 
 	populateRes(response, args...)
