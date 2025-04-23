@@ -3,6 +3,7 @@ package service
 import (
 	"blog-andressa/internal/model"
 	"blog-andressa/internal/repository"
+	"blog-andressa/utils"
 )
 
 type UserService interface {
@@ -26,12 +27,19 @@ func NewUserService(repo repository.UserRepository) UserService {
 func (us *UserServiceImpl) CreateUser(userReq *model.UserReq) *model.Response {
 	user := userReq.ToUser()
 
+	hash , err := utils.HashPassword(user.Password)
+	if err != nil {
+		return model.NewErrorResponse(err,"Error ao gerar o hash da senha.")
+	}
+
+	user.Password = hash
+
 	createUser, err := us.repo.Create(user)
 	if err != nil {
 		return model.NewErrorResponse(err, 500)
 	}
 
-	return model.NewSuccessResponse(createUser.ToUserRes())
+	return model.NewCreatedResponse(createUser.ToUserRes())
 }
 
 func (us *UserServiceImpl) FindAllUsers() *model.Response {
