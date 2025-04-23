@@ -41,6 +41,17 @@ func NewSuccessResponse(data any, args ...any) *Response {
 	return response
 }
 
+func NewCreatedResponse(data any, args ...any) *Response {
+	response := &Response{
+		Status: 201,
+		Data:   data,
+	}
+
+	populateRes(response, args...)
+
+	return response
+}
+
 func NewErrorResponse(err error, args ...any) *Response {
 	response := &Response{
 		Status: 400,
