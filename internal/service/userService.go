@@ -3,10 +3,13 @@ package service
 import (
 	"blog-andressa/internal/model"
 	"blog-andressa/internal/repository"
+	"blog-andressa/utils"
+	"blog-andressa/utils/auth"
 )
 
 type UserService interface {
 	CreateUser(userReq *model.UserReq) *model.Response
+	Login(req *model.LoginRequest) *model.LoginResponse
 	FindAllUsers() *model.Response
 	FindUserByEmail(email string) *model.Response
 	UpdateUser(id uint, userReq *model.UserReq) *model.Response
@@ -26,12 +29,34 @@ func NewUserService(repo repository.UserRepository) UserService {
 func (us *UserServiceImpl) CreateUser(userReq *model.UserReq) *model.Response {
 	user := userReq.ToUser()
 
+	hash , err := utils.HashPassword(user.Password)
+	if err != nil {
+		return model.NewErrorResponse(err,"Error ao gerar o hash da senha.")
+	}
+
+	user.Password = hash
+
 	createUser, err := us.repo.Create(user)
 	if err != nil {
 		return model.NewErrorResponse(err, 500)
 	}
 
-	return model.NewSuccessResponse(createUser.ToUserRes())
+	return model.NewCreatedResponse(createUser.ToUserRes())
+}
+
+func (us *UserServiceImpl) Login(req *model.LoginRequest) *model.LoginResponse {
+	user, _ := us.repo.FindByEmail(req.Email)
+
+	if !utils.CompareHash(req.Password, user.Password) {
+		return nil
+	}
+
+	token, err := auth.GenerateToken(user.Name)
+	if err != nil {
+		return nil
+	}
+
+	return &model.LoginResponse{Token: token} 
 }
 
 func (us *UserServiceImpl) FindAllUsers() *model.Response {
