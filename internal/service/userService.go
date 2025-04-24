@@ -4,10 +4,12 @@ import (
 	"blog-andressa/internal/model"
 	"blog-andressa/internal/repository"
 	"blog-andressa/utils"
+	"blog-andressa/utils/auth"
 )
 
 type UserService interface {
 	CreateUser(userReq *model.UserReq) *model.Response
+	Login(req *model.LoginRequest) *model.LoginResponse
 	FindAllUsers() *model.Response
 	FindUserByEmail(email string) *model.Response
 	UpdateUser(id uint, userReq *model.UserReq) *model.Response
@@ -40,6 +42,21 @@ func (us *UserServiceImpl) CreateUser(userReq *model.UserReq) *model.Response {
 	}
 
 	return model.NewCreatedResponse(createUser.ToUserRes())
+}
+
+func (us *UserServiceImpl) Login(req *model.LoginRequest) *model.LoginResponse {
+	user, _ := us.repo.FindByEmail(req.Email)
+
+	if !utils.CompareHash(req.Password, user.Password) {
+		return nil
+	}
+
+	token, err := auth.GenerateToken(user.Name)
+	if err != nil {
+		return nil
+	}
+
+	return &model.LoginResponse{Token: token} 
 }
 
 func (us *UserServiceImpl) FindAllUsers() *model.Response {
